@@ -21,12 +21,13 @@ async function startServer() {
   const server = new ApolloServer({
     typeDefs,
     resolvers,
+    csrfPrevention: false,
     plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
   });
 
   await server.start();
 
-  app.use(cors());
+  app.use(cors({ origin: "*", credentials: true }));
   app.use(compression()); // Gzip compression for all JSON / GraphQL responses
   app.use(express.json());
 
@@ -39,13 +40,13 @@ async function startServer() {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
   });
 
-  // GraphQL endpoint
-  app.use(
-    "/graphql",
-    expressMiddleware(server, {
-      context: async ({ req }) => ({ req }),
-    }) as unknown as express.RequestHandler
-  );
+  const graphqlMiddleware = expressMiddleware(server, {
+    context: async ({ req }) => ({ req }),
+  }) as unknown as express.RequestHandler;
+
+  // GraphQL endpoint (supports both /graphql and root POST /)
+  app.use("/graphql", graphqlMiddleware);
+  app.post("/", graphqlMiddleware);
 
   // Initialize DB tables on startup
   try {

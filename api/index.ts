@@ -11,7 +11,11 @@ import { initDb } from "../src/db";
 dotenv.config();
 
 const app = express();
-const server = new ApolloServer({ typeDefs, resolvers });
+const server = new ApolloServer({
+  typeDefs,
+  resolvers,
+  csrfPrevention: false, // Allow cross-origin browser requests from any Vercel domain
+});
 
 let serverStarted = false;
 
@@ -19,7 +23,7 @@ async function bootstrap() {
   if (!serverStarted) {
     await server.start();
 
-    app.use(cors());
+    app.use(cors({ origin: "*", credentials: true }));
     app.use(compression());
     app.use(express.json());
 
@@ -28,15 +32,17 @@ async function bootstrap() {
       res.json({ status: "ok", timestamp: new Date().toISOString() });
     });
 
-    // GraphQL endpoint
-    app.use(
-      "/graphql",
-      expressMiddleware(server, {
-        context: async ({ req }) => ({ req }),
-      }) as unknown as RequestHandler
-    );
+    const graphqlHandler = expressMiddleware(server, {
+      context: async ({ req }) => ({ req }),
+    }) as unknown as RequestHandler;
 
-    // Root endpoint
+    // Support GraphQL on /graphql, /api/graphql, /api/index, and root POST /
+    app.use("/graphql", graphqlHandler);
+    app.use("/api/graphql", graphqlHandler);
+    app.use("/api/index", graphqlHandler);
+    app.post("/", graphqlHandler);
+
+    // Root GET endpoint
     app.get("/", (_req: Request, res: Response) => {
       res.json({ message: "ReleaseCheck GraphQL API", graphql: "/graphql", health: "/health" });
     });
