@@ -5,6 +5,7 @@ COPY package*.json tsconfig.json ./
 RUN npm ci
 
 COPY src ./src
+COPY api ./api
 RUN npm run build
 
 FROM node:20-alpine AS runner
@@ -20,4 +21,4 @@ COPY --from=builder /app/dist ./dist
 EXPOSE 4000
 ENV PORT=4000
 
-CMD ["node", "dist/server.js"]
+CMD ["node", "dist/src/server.js"]

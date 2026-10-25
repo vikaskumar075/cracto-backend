@@ -2,11 +2,11 @@
   "name": "releasecheck-backend",
   "version": "1.0.0",
   "description": "GraphQL API for Release Checklist Tool",
-  "main": "dist/server.js",
+  "main": "dist/src/server.js",
   "scripts": {
     "dev": "ts-node src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js",
+    "start": "node dist/src/server.js",
     "test": "jest"
   },
   "dependencies": {
